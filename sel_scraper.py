@@ -50,7 +50,7 @@ def update_required(category: str):
     current_time = datetime.now()
     update_time = datetime.fromtimestamp(os.stat(expected_file_path).st_mtime)
     # updated less than 15mins. ago
-    last_update = (update_time - current_time).total_seconds() / 60
+    last_update = (current_time - update_time).total_seconds() / 60
     print(f"Last update {last_update}mins from now.")
     if last_update <= 15:
         return False
