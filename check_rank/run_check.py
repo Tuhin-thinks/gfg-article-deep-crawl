@@ -32,11 +32,6 @@ def check_more_results_available(soup: BeautifulSoup) -> bool:
         return True
 
 
-def get_last_improved(soup: BeautifulSoup):
-    last_improved_by_css_selector = "div.improved:nth-child(1)>ul>li>a"
-    return [x.text for x in soup.find_all(last_improved_by_css_selector)]
-
-
 def load_csv_data(file_path) -> pd.DataFrame:
     topics_df = pd.read_csv(file_path)
     return topics_df
@@ -175,7 +170,7 @@ def main(inp_csv_path: str, out_csv_path: str):
         traceback.print_exc()
 
     # write the dataframe to output csv file
-    topic_df.to_csv(out_csv_path)
+    topic_df.to_csv(out_csv_path, index=False)
 
 
 if __name__ == '__main__':
