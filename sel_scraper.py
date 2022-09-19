@@ -10,7 +10,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import TimeoutException
-
+from globals import Driver
 from check_rank import run_check
 
 
@@ -47,15 +47,10 @@ def scrap_all_titles(driver: webdriver.Chrome, base_url: str):
 
 def update_required(category: str):
     expected_file_path = os.path.join("data", f"scraped_{category}_Output.csv")
-    # current_time = datetime.now()
-    # update_time = datetime.fromtimestamp(os.stat(expected_file_path).st_mtime)
-    # # updated less than 15mins. ago
-    # last_update = (current_time - update_time).total_seconds() / 60
-    # print(f"Last update {last_update}mins from now.")
-    # if last_update <= 15:
-    #     return False
-    # else:
-    #     return True
+    if os.path.exists(expected_file_path):
+        use_new = input("Use existing scraped data or scrape new articles?:"
+                        " [Y]es/[n]")
+        return use_new.lower() != 'y'
     return True
 
 
@@ -83,13 +78,14 @@ def main():
         exe = chrome.ChromeDriverManager().install()
         service = Service(exe)
         driver = webdriver.Chrome(service=service)
+        Driver.driver = driver  # store the driver instance
         # load page
         driver.get(start_url)
 
         # crawling website for all pages
         data = scrap_all_titles(driver, start_url)
 
-        driver.quit()
+        # driver.quit()  # todo: check what is the scraping method, if selenium don't quit
 
         df = pd.DataFrame(data, columns=['Title', "Link"])
 

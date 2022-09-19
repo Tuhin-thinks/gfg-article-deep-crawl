@@ -6,6 +6,8 @@ from urllib.parse import urlencode, urlparse
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
+from check_rank import selenium
+
 
 from .tools import Url
 
@@ -89,27 +91,31 @@ def do_search(search_query: str, target_url: str, dork_search: bool,
     url = url_pre + quoted_query
     print(url)
 
-    response = requests.get(url)
+    # call the selenium scraper from here
+    titles, search_links = selenium.get_search_links_selenium(url)
 
-    with open("search-page.html", 'wb') as file:
-        file.write(response.content)
+    # response = requests.get(url)
+    #
+    # with open("search-page.html", 'wb') as file:
+    #     file.write(response.content)
+    #
+    # soup = BeautifulSoup(response.content, 'html5lib')
 
-    soup = BeautifulSoup(response.content, 'html5lib')
-
-    has_more_results = check_more_results_available(soup)
+    # has_more_results = check_more_results_available(soup)
+    has_more_results = selenium.check_has_more_contents()
     # if no more results available, do a dork search
     if not has_more_results:
         print(f"[No more articles available at page: {page_count}, "
               f"starting dork search]")
-        (rank, gfg_article_info, higher_ranking_articles,
+        (rank, higher_ranking_articles,
          search_status) = do_search(search_query=dork_search_query,
                                     target_url=target_url,
                                     dork_search=True)
         if search_status != "NF":
             search_status = "NR"
-        return rank, gfg_article_info, higher_ranking_articles, search_status
+        return rank, higher_ranking_articles, search_status
 
-    titles, search_links = get_search_links(soup)
+    # titles, search_links = get_search_links(soup)
 
     for rank, (title, link) in enumerate(zip(titles, search_links), 1):
         domain = get_domain(link)
@@ -119,33 +125,31 @@ def do_search(search_query: str, target_url: str, dork_search: bool,
                 print(f"[Ranking 1-{rank - 1} articles]")
                 print("\n".join(search_links[:rank - 1]))
             print(f"\n{16 * '--'}\n")
-            gfg_article_info = f"{link}"
             higher_ranking_articles = "\n".join(search_links[:rank - 1])
 
-            return (rank + page_count * 10, gfg_article_info,
+            return (rank + page_count * 10,
                     higher_ranking_articles, "")
 
     if not dork_search and page_count >= 10:
-        (rank, gfg_article_info, higher_ranking_articles,
+        (rank, higher_ranking_articles,
          search_status) = do_search(search_query=dork_search_query,
                                     target_url=target_url,
                                     dork_search=True)
         if search_status != "NF":
             search_status = "NR"
-        return rank, gfg_article_info, higher_ranking_articles, search_status
+        return rank, higher_ranking_articles, search_status
     elif not dork_search and page_count < 10:
-        (rank, gfg_article_info, higher_ranking_articles,
+        (rank, higher_ranking_articles,
          search_status) = do_search(search_query, target_url,
                                     dork_search=False,
                                     page_count=page_count + 1)
-        return rank, gfg_article_info, higher_ranking_articles, search_status
-    return "Not Found", '', "", "NF"
+        return rank, higher_ranking_articles, search_status
+    return "Not Found", "", "NF"
 
 
 def main(inp_csv_path: str, out_csv_path: str):
     topic_df = load_csv_data(inp_csv_path)
-    all_cols = ["Rank", "GFG Article INFO", "Higher Ranking Articles",
-                "Search Status"]
+    all_cols = ["Rank", "Higher Ranking Articles", "Search Status"]
     for col_name in all_cols:
         topic_df[col_name] = None
 
@@ -154,11 +158,10 @@ def main(inp_csv_path: str, out_csv_path: str):
         for index, row in topic_df.iterrows():
             topic_str = row['Title']
             target_url = row['Link']
-            (rank, gfg_article_info, higher_ranking_articles,
+            (rank, higher_ranking_articles,
              deep_search_status) = do_search(topic_str, target_url=target_url,
                                              dork_search=False)
             topic_df.loc[index, all_cols] = [rank,
-                                             gfg_article_info,
                                              higher_ranking_articles,
                                              deep_search_status]
 
