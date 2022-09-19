@@ -168,6 +168,9 @@ def main(inp_csv_path: str, out_csv_path: str):
     except Exception as e:
         print(f"Search stopped at index: {index}, due to error: {e.__str__()}")
         traceback.print_exc()
+    except KeyboardInterrupt:
+        print(f"Script stopped manually at index: {index}. "
+              f"Saving modified dataframe to csv: {out_csv_path}.")
 
     # write the dataframe to output csv file
     topic_df.to_csv(out_csv_path, index=False)
