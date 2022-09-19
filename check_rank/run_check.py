@@ -91,8 +91,7 @@ def do_search(search_query: str, target_url: str, dork_search: bool,
     url = url_pre + quoted_query
     print(url)
 
-    # call the selenium scraper from here
-    titles, search_links = selenium.get_search_links_selenium(url)
+
 
     # response = requests.get(url)
     #
@@ -116,6 +115,8 @@ def do_search(search_query: str, target_url: str, dork_search: bool,
         return rank, higher_ranking_articles, search_status
 
     # titles, search_links = get_search_links(soup)
+    # call the selenium scraper from here
+    titles, search_links = selenium.get_search_links_selenium(url)
 
     for rank, (title, link) in enumerate(zip(titles, search_links), 1):
         domain = get_domain(link)
