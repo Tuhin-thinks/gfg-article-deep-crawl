@@ -47,15 +47,16 @@ def scrap_all_titles(driver: webdriver.Chrome, base_url: str):
 
 def update_required(category: str):
     expected_file_path = os.path.join("data", f"scraped_{category}_Output.csv")
-    current_time = datetime.now()
-    update_time = datetime.fromtimestamp(os.stat(expected_file_path).st_mtime)
-    # updated less than 15mins. ago
-    last_update = (current_time - update_time).total_seconds() / 60
-    print(f"Last update {last_update}mins from now.")
-    if last_update <= 15:
-        return False
-    else:
-        return True
+    # current_time = datetime.now()
+    # update_time = datetime.fromtimestamp(os.stat(expected_file_path).st_mtime)
+    # # updated less than 15mins. ago
+    # last_update = (current_time - update_time).total_seconds() / 60
+    # print(f"Last update {last_update}mins from now.")
+    # if last_update <= 15:
+    #     return False
+    # else:
+    #     return True
+    return True
 
 
 def main():
