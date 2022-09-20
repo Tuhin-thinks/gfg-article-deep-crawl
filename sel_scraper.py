@@ -96,6 +96,11 @@ def main():
     out_path = os.path.join("data", f"rank_{category}.csv")
     # scrap all ranking for the links & titles fetched
     run_check.main(info_csv_path, out_path)
+    if Driver.driver:
+        try:
+            Driver.driver.quit()
+        except AttributeError:
+            pass
 
 
 if __name__ == '__main__':
