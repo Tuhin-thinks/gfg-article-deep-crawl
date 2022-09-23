@@ -1,4 +1,7 @@
+import random
 import re
+import time
+
 from globals import Driver
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
@@ -25,7 +28,6 @@ def get_search_links_selenium(search_url):
     :return: list of titles and links
     """
     driver = init_driver()
-    driver.get(search_url)
     try:
         # wait a minute for user to solve captcha (if captcha appeared)
         WebDriverWait(driver, 60).until(EC.presence_of_element_located(
@@ -49,6 +51,9 @@ def get_search_links_selenium(search_url):
             print(h3, a.get_attribute('href'))
             titles.append(h3)
             links.append(a.get_attribute('href'))
+
+    time.sleep(random.randint(1, 3))
+    driver.execute_script("window.scrollBy(0, 500);")
     return titles, links
 
 
@@ -64,5 +69,6 @@ def check_has_more_contents():
                           re.I)
         if match:
             return False
+        return True
     else:
         return True

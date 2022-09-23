@@ -79,40 +79,39 @@ def do_search(search_query: str, target_url: str, dork_search: bool,
     :param page_count:
     search in google
     """
-    url_pre = "https://www.google.com/search?"
+    url_pre = "http://www.google.com/search?"
     dork_search_query = f"site:news.geeksforgeeks.org {search_query}"
 
     # search_query = input("Search query: ")
-    params = {'q': search_query}
     if not dork_search:
+        params = {'q': search_query}
         params.update({'start': page_count * 10})
+    else:
+        params = {'q': dork_search_query}
     quoted_query = urlencode(params)
 
     url = url_pre + quoted_query
     print(url)
-
-
-
-    # response = requests.get(url)
-    #
-    # with open("search-page.html", 'wb') as file:
-    #     file.write(response.content)
-    #
-    # soup = BeautifulSoup(response.content, 'html5lib')
-
-    # has_more_results = check_more_results_available(soup)
+    # check page for the url
+    selenium.init_driver().get(url)
     has_more_results = selenium.check_has_more_contents()
     # if no more results available, do a dork search
-    if not has_more_results:
+    if not has_more_results and not dork_search:
+        # last search was normal search and there are no more pages to be
+        # searched, thus do a dork search and return the results.
         print(f"[No more articles available at page: {page_count}, "
               f"starting dork search]")
         (rank, higher_ranking_articles,
-         search_status) = do_search(search_query=dork_search_query,
+         search_status) = do_search(search_query=search_query,
                                     target_url=target_url,
                                     dork_search=True)
         if search_status != "NF":
             search_status = "NR"
         return rank, higher_ranking_articles, search_status
+    elif not has_more_results and dork_search:
+        # if current search is a dork search and no more results available,
+        # then return the status as not found
+        return "Not Found", "", "NF"
 
     # titles, search_links = get_search_links(soup)
     # call the selenium scraper from here
@@ -132,31 +131,48 @@ def do_search(search_query: str, target_url: str, dork_search: bool,
                     higher_ranking_articles, "")
 
     if not dork_search and page_count >= 10:
+        # previously was doing normal search,
+        # but in 10 pages the target no found
+        # so, now try with dork search
         (rank, higher_ranking_articles,
-         search_status) = do_search(search_query=dork_search_query,
+         search_status) = do_search(search_query=search_query,
                                     target_url=target_url,
                                     dork_search=True)
         if search_status != "NF":
             search_status = "NR"
         return rank, higher_ranking_articles, search_status
     elif not dork_search and page_count < 10:
+        # previously was trying normal search, and in the last page the target
+        # is not found, so try to go to the next page and try a normal search
         (rank, higher_ranking_articles,
          search_status) = do_search(search_query, target_url,
                                     dork_search=False,
                                     page_count=page_count + 1)
         return rank, higher_ranking_articles, search_status
+
+    # if the search was a dork search and no match found,
+    # so return the status of not found
     return "Not Found", "", "NF"
 
 
-def main(inp_csv_path: str, out_csv_path: str):
-    topic_df = load_csv_data(inp_csv_path)
+def main(inp_csv_path: str, out_csv_path: str, modify_existing: bool = False,
+         start_from: int = 0):
+    if modify_existing:
+        topic_df = load_csv_data(out_csv_path)
+    else:
+        topic_df = load_csv_data(inp_csv_path)
     all_cols = ["Rank", "Higher Ranking Articles", "Search Status"]
-    for col_name in all_cols:
-        topic_df[col_name] = None
+    if not modify_existing:
+        for col_name in all_cols:
+            topic_df[col_name] = None
 
     index = 0
     try:
-        for index, row in topic_df.iterrows():
+        if len(topic_df) <= start_from:
+            print("All data already scraped. "
+                  "Delete config file to start from the beginning.")
+            return
+        for index, row in topic_df.iloc[start_from:].iterrows():
             topic_str = row['Title']
             target_url = row['Link']
             (rank, higher_ranking_articles,
@@ -178,6 +194,7 @@ def main(inp_csv_path: str, out_csv_path: str):
 
     # write the dataframe to output csv file
     topic_df.to_csv(out_csv_path, index=False)
+    return index
 
 
 if __name__ == '__main__':
